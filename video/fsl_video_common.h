@@ -85,6 +85,7 @@ typedef enum _video_resolution
     kVIDEO_Resolution720P  = FSL_VIDEO_RESOLUTION(1280, 720),  /*!< 720P, 1280 * 720 */
     kVIDEO_Resolution1080P = FSL_VIDEO_RESOLUTION(1920, 1080), /*!< 1080P, 1920 * 1280*/
     kVIDEO_ResolutionWXGA  = FSL_VIDEO_RESOLUTION(1280, 800),  /*!< WXGA, 1280 * 800 */
+	kVIDEO_ResolutionQSXGA = FSL_VIDEO_RESOLUTION(2592, 1944), /*!< QSXGA, 2592 * 1944*/
 } video_resolution_t;
 
 /*!

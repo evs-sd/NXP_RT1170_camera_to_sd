@@ -118,14 +118,14 @@ void BOARD_InitMipiCsi(void)
     const clock_root_config_t csi2ClockConfig = {
         .clockOff = false,
         .mux      = 5,
-        .div      = 8,
+        .div      = 6, // 8
     };
 
     /* ESC clock should be in the range of 60~80 MHz */
     const clock_root_config_t csi2EscClockConfig = {
         .clockOff = false,
         .mux      = 5,
-        .div      = 8,
+        .div      = 6, // 8
     };
 
     /* UI clock should be equal or faster than the input pixel clock.
@@ -135,7 +135,7 @@ void BOARD_InitMipiCsi(void)
     const clock_root_config_t csi2UiClockConfig = {
         .clockOff = false,
         .mux      = 5,
-        .div      = 8,
+        .div      = 6, // 8
     };
 
     if (kStatus_Success != BOARD_VerifyCameraClockSource())

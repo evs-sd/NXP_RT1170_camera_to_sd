@@ -60,10 +60,12 @@ static status_t sdcardWaitCardInsert(void);
  * Variables
  ******************************************************************************/
 
-AT_NONCACHEABLE_SECTION_ALIGN(static uint8_t s_cameraBuffer[DEMO_CAMERA_BUFFER_COUNT][DEMO_CAMERA_HEIGHT]
+//AT_NONCACHEABLE_SECTION_ALIGN(static uint8_t s_cameraBuffer[DEMO_CAMERA_BUFFER_COUNT][DEMO_CAMERA_HEIGHT]
+//																					  [DEMO_CAMERA_WIDTH * DEMO_CAMERA_BUFFER_BPP],
+//																					  DEMO_CAMERA_BUFFER_ALIGN);
+AT_NONCACHEABLE_SECTION_ALIGN(static uint8_t s_cameraBuffer[DEMO_CAMERA_BUFFER_COUNT-1][DEMO_CAMERA_HEIGHT]
 																					  [DEMO_CAMERA_WIDTH * DEMO_CAMERA_BUFFER_BPP],
 																					  DEMO_CAMERA_BUFFER_ALIGN);
-
 /*******************************************************************************
  * Code
  ******************************************************************************/
@@ -152,7 +154,8 @@ static void DEMO_InitCamera(void)
 	/* Submit the empty frame buffers to buffer queue. */
 	for (uint32_t i = 0; i < DEMO_CAMERA_BUFFER_COUNT; i++)
 	{
-		CAMERA_RECEIVER_SubmitEmptyBuffer(&cameraReceiver, (uint32_t)(s_cameraBuffer[i]));
+		//CAMERA_RECEIVER_SubmitEmptyBuffer(&cameraReceiver, (uint32_t)(s_cameraBuffer[i]));
+		CAMERA_RECEIVER_SubmitEmptyBuffer(&cameraReceiver, (uint32_t)(s_cameraBuffer[0]));
 	}
 }
 
