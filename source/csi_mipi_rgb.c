@@ -19,6 +19,8 @@
 #include "fsl_sd_disk.h"
 #include "sdmmc_config.h"
 
+#include "fsl_gpt.h"
+
 
 const static uint8_t header_bmp[] = {
 		0x42,0x4D,0x36,0xEC,0x5E,0x00,0x00,0x00,0x00,0x00,0x36,0x00,0x00,0x00,0x28,0x00,
@@ -55,6 +57,7 @@ const static uint8_t header_bmp[] = {
 static void DEMO_InitCamera(void);
 static void DEMO_CSI_MIPI_RGB(void);
 static status_t sdcardWaitCardInsert(void);
+static void timer_init();
 
 /*******************************************************************************
  * Variables
@@ -103,6 +106,8 @@ int main(void)
 	BOARD_InitMipiCameraPins();
 	BOARD_InitDebugConsole();
 	BOARD_InitPins();
+
+	timer_init();
 
 	PRINTF("CSI MIPI RGB example start...\r\n");
 
@@ -162,33 +167,39 @@ static void DEMO_InitCamera(void)
 static FATFS g_fileSystem; /* File system object */
 const TCHAR driverNumberBuffer[3U] = {SDDISK + '0', ':', '/'};
 
-#define COUNT_SCREEN 4
+#define COUNT_SCREEN 40
+
+volatile uint32_t ticker = 0;
+volatile uint32_t old_ticker = 0;
 
 static void DEMO_CSI_MIPI_RGB(void)
 {
 	uint32_t cameraReceivedFrameAddr;
 
-	PRINTF("start receive\n");
+	PRINTF("start receive %d\n\n", ticker);
 	CAMERA_RECEIVER_Start(&cameraReceiver);
 
 	while (1)
 	{
 		for(int i = 0; i < COUNT_SCREEN; i++) {
+			old_ticker = ticker;
+			PRINTF("start idle screen %d\n", i);
 			while (kStatus_Success != CAMERA_RECEIVER_GetFullBuffer(&cameraReceiver, &cameraReceivedFrameAddr))
 			{
 			}
+			PRINTF("end idle screen %d %d\n\n", i, ticker - old_ticker);
 			CAMERA_RECEIVER_SubmitEmptyBuffer(&cameraReceiver, (uint32_t)cameraReceivedFrameAddr);
 		}
 
-		PRINTF("get full buffer\n");
-
+		PRINTF("start screen %d\n", ticker);
 		while (kStatus_Success != CAMERA_RECEIVER_GetFullBuffer(&cameraReceiver, &cameraReceivedFrameAddr))
 		{
 		}
+		PRINTF("end screen %d\n", ticker);
 
 		CAMERA_RECEIVER_Stop(&cameraReceiver);
 
-		PRINTF("stop receive\n");
+		PRINTF("stop receive %d\n", ticker);
 
 		if (sdcardWaitCardInsert() != kStatus_Success) {
 			PRINTF("Error sd card.\r\n");
@@ -214,6 +225,7 @@ static void DEMO_CSI_MIPI_RGB(void)
 
 		while(1) {
 			asm("nop");
+
 		}
 	}
 }
@@ -245,4 +257,56 @@ static status_t sdcardWaitCardInsert(void)
 	}
 
 	return kStatus_Success;
+}
+
+#define GPT_IRQ_ID GPT2_IRQn
+#define EXAMPLE_GPT GPT2
+#define EXAMPLE_GPT_IRQHandler GPT2_IRQHandler
+
+/* Get source clock for GPT driver (GPT prescaler = 0) */
+#define EXAMPLE_GPT_CLK_FREQ CLOCK_GetFreq(kCLOCK_OscRc48MDiv2)
+
+
+
+static void timer_init() {
+	uint32_t gptFreq;
+	gpt_config_t gptConfig;
+	GPT_GetDefaultConfig(&gptConfig);
+
+	/* Initialize GPT module */
+	GPT_Init(EXAMPLE_GPT, &gptConfig);
+
+	/* Divide GPT clock source frequency by 3 inside GPT module */
+	GPT_SetClockDivider(EXAMPLE_GPT, 3);
+
+	/* Get GPT clock frequency */
+	gptFreq = EXAMPLE_GPT_CLK_FREQ;
+
+	/* GPT frequency is divided by 3 inside module */
+	gptFreq /= 3;
+
+	/* Set both GPT modules to 1 second duration */
+	GPT_SetOutputCompareValue(EXAMPLE_GPT, kGPT_OutputCompare_Channel1, 8000); // 8 000 000 - 1 sec
+
+	/* Enable GPT Output Compare1 interrupt */
+	GPT_EnableInterrupts(EXAMPLE_GPT, kGPT_OutputCompare1InterruptEnable);
+
+	/* Enable at the Interrupt */
+	EnableIRQ(GPT_IRQ_ID);
+
+	/* Start Timer */
+	GPT_StartTimer(EXAMPLE_GPT);
+}
+
+void EXAMPLE_GPT_IRQHandler(void)
+{
+    /* Clear interrupt flag.*/
+    GPT_ClearStatusFlags(EXAMPLE_GPT, kGPT_OutputCompare1Flag);
+
+    ticker++;
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F, Cortex-M7, Cortex-M7F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U || __CORTEX_M == 7U)
+    __DSB();
+#endif
 }
