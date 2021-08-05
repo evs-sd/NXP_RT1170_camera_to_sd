@@ -46,7 +46,7 @@ const static uint8_t header_bmp[] = {
 /* CSI output frame buffer is XRGB8888. */
 #define DEMO_CAMERA_BUFFER_BPP 4 // 4
 
-#define DEMO_CAMERA_BUFFER_COUNT 2
+#define DEMO_CAMERA_BUFFER_COUNT 3
 
 
 
@@ -66,7 +66,7 @@ static void timer_init();
 //AT_NONCACHEABLE_SECTION_ALIGN(static uint8_t s_cameraBuffer[DEMO_CAMERA_BUFFER_COUNT][DEMO_CAMERA_HEIGHT]
 //																					  [DEMO_CAMERA_WIDTH * DEMO_CAMERA_BUFFER_BPP],
 //																					  DEMO_CAMERA_BUFFER_ALIGN);
-AT_NONCACHEABLE_SECTION_ALIGN(static uint8_t s_cameraBuffer[DEMO_CAMERA_BUFFER_COUNT-1][DEMO_CAMERA_HEIGHT]
+AT_NONCACHEABLE_SECTION_ALIGN(static uint8_t s_cameraBuffer[DEMO_CAMERA_BUFFER_COUNT-2][DEMO_CAMERA_HEIGHT]
 																					  [DEMO_CAMERA_WIDTH * DEMO_CAMERA_BUFFER_BPP],
 																					  DEMO_CAMERA_BUFFER_ALIGN);
 /*******************************************************************************
@@ -167,7 +167,7 @@ static void DEMO_InitCamera(void)
 static FATFS g_fileSystem; /* File system object */
 const TCHAR driverNumberBuffer[3U] = {SDDISK + '0', ':', '/'};
 
-#define COUNT_SCREEN 40
+#define COUNT_SCREEN 100
 
 volatile uint32_t ticker = 0;
 volatile uint32_t old_ticker = 0;
@@ -187,15 +187,15 @@ static void DEMO_CSI_MIPI_RGB(void)
 			while (kStatus_Success != CAMERA_RECEIVER_GetFullBuffer(&cameraReceiver, &cameraReceivedFrameAddr))
 			{
 			}
-			PRINTF("end idle screen %d %d\n\n", i, ticker - old_ticker);
+			PRINTF("end idle screen %d  - %d ms\n\n", i, ticker - old_ticker);
 			CAMERA_RECEIVER_SubmitEmptyBuffer(&cameraReceiver, (uint32_t)cameraReceivedFrameAddr);
 		}
 
-		PRINTF("start screen %d\n", ticker);
+		PRINTF("start screen %d ms\n", ticker);
 		while (kStatus_Success != CAMERA_RECEIVER_GetFullBuffer(&cameraReceiver, &cameraReceivedFrameAddr))
 		{
 		}
-		PRINTF("end screen %d\n", ticker);
+		PRINTF("end screen %d ms\n", ticker);
 
 		CAMERA_RECEIVER_Stop(&cameraReceiver);
 
